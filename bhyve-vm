@@ -22,8 +22,8 @@ vmnumber=0
 # snapshotting, each VM should be in its own directory, and should be a separate
 # ZFS dataset. For example:
 #
-#   /virt/vm0                <-- ZFS dataset and $vmpath.
-#   /virt/vm0/vm0            <-- This script.
+#   /virt/vm0		<-- ZFS dataset and $vmpath.
+#   /virt/vm0/vm0	    <-- This script.
 #   /virt/vm0/vm0_disk0.img  <-- Hard disk image.
 #   /virt/vm0/cdrom.iso      <-- Operating System install ISO.
 
@@ -55,8 +55,8 @@ vmpath=$(dirname $0)
 
 # Check for firmware.
 if ! [ -e /usr/local/share/uefi-firmware/BHYVE_UEFI.fd ]; then
-        echo "Firmware not found. Try \`pkg install bhyve-firmware\`." >&2
-        exit 1
+	echo "Firmware not found. Try \`pkg install bhyve-firmware\`." >&2
+	exit 1
 fi
 
 # Calculate the VNC port number (5900 + $vmnumber).
@@ -69,19 +69,43 @@ vncport=$(echo "5900 + $vmnumber" | bc)
 #   - lpc must be in slot 31.
 #   - Some Windows versions require a CD-ROM device to be present. This can be
 #     an empty file, created with 'touch cdrom.iso'.
-/usr/sbin/bhyve \
-	-c sockets=1,cores=$cpucores,threads=1 \
-	-m $ram \
-	-w \
-	-H \
-	-s 0,hostbridge \
-	-s 1,virtio-blk,$vmpath/${vmname}_disk0.img \
-	-s 2,virtio-net,tap$vmnumber \
-	$cdrom \
-	-s 29,fbuf,tcp=$vnc:$vncport,w=800,h=600 \
-	-s 30,xhci,tablet \
-	-s 31,lpc \
-	-l com1,${comoutput:-/dev/nmdm${vmnumber}A} \
-	-l bootrom,/usr/local/share/uefi-firmware/BHYVE_UEFI.fd \
-	$vmname
-/usr/sbin/bhyvectl --destroy --vm=$vmname
+
+while [ 1 ]; do
+	/usr/sbin/bhyve \
+		-c sockets=1,cores=$cpucores,threads=1 \
+		-m $ram \
+		-w \
+		-H \
+		-s 0,hostbridge \
+		-s 1,virtio-blk,$vmpath/${vmname}_disk0.img \
+		-s 2,virtio-net,tap$vmnumber \
+		$cdrom \
+		-s 29,fbuf,tcp=$vnc:$vncport,w=800,h=600 \
+		-s 30,xhci,tablet \
+		-s 31,lpc \
+		-l com1,${comoutput:-/dev/nmdm${vmnumber}A} \
+		-l bootrom,/usr/local/share/uefi-firmware/BHYVE_UEFI.fd \
+		$vmname
+
+	bhyve_exit=$?
+	# bhyve returns the following status codes:
+	#  0 - VM has been reset
+	#  1 - VM has been powered off
+	#  2 - VM has been halted
+	#  3 - VM generated a triple fault
+	#  all other non-zero status codes are errors
+	#
+	if [ $bhyve_exit -ne 0 ]; then
+		break
+	fi
+done
+
+case $bhyve_exit in
+	0|1|2)
+		# Cleanup /dev/vmm entry when bhyve did not exit
+		# due to an error.
+		/usr/sbin/bhyvectl --vm=$vmname --destroy > /dev/null 2>&1
+		;;
+esac
+
+exit $bhyve_exit
