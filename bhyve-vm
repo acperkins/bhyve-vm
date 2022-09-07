@@ -43,6 +43,11 @@ vnchost="[::1]"
 # Uncomment to use stdio for the serial console.
 #comoutput=stdio
 
+# The VM will be named after the vmnumber, unless you change the
+# vmname variable here.
+vmname=vm$vmnumber
+vmpath=$(dirname $0)
+
 # Comment the next line out for no CD-ROM.
 #cdrom="-s 3,ahci-cd,$vmpath/cdrom.iso"
 
@@ -53,11 +58,6 @@ if ! [ -e /usr/local/share/uefi-firmware/BHYVE_UEFI.fd ]; then
         echo "Firmware not found. Try \`pkg install bhyve-firmware\`." >&2
         exit 1
 fi
-
-# The VM will be named after the vmnumber, unless you change the
-# vmname variable here.
-vmname=vm$vmnumber
-vmpath=$(dirname $0)
 
 # Calculate the VNC port number (5900 + $vmnumber).
 vncport=$(echo "5900 + $vmnumber" | bc)
