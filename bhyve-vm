@@ -22,8 +22,8 @@ vmnumber=0
 # snapshotting, each VM should be in its own directory, and should be a separate
 # ZFS dataset. For example:
 #
-#   /virt/vm0		<-- ZFS dataset and $vmpath.
-#   /virt/vm0/vm0	    <-- This script.
+#   /virt/vm0                <-- ZFS dataset and $vmpath.
+#   /virt/vm0/vm0            <-- This script.
 #   /virt/vm0/vm0_disk0.img  <-- Hard disk image.
 #   /virt/vm0/cdrom.iso      <-- Operating System install ISO.
 
