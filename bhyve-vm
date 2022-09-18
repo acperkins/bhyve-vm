@@ -48,6 +48,10 @@ vnchost="[::1]"
 vmname=vm$vmnumber
 vmpath=$(dirname $0)
 
+# The first ten digits of the MAC address to use. The private MAC address range
+# is: x2:xx:xx:xx:xx:xx; x6:xx:xx:xx:xx:xx; xA:xx:xx:xx:xx:xx; xE:xx:xx:xx:xx:xx
+macaddress10="ca:ca:ca:ca:ca"
+
 # Comment the next line out for no CD-ROM.
 #cdrom="-s 3,ahci-cd,$vmpath/cdrom.iso"
 
@@ -78,7 +82,7 @@ while [ 1 ]; do
 		-H \
 		-s 0,hostbridge \
 		-s 1,virtio-blk,$vmpath/${vmname}_disk0.img \
-		-s 2,virtio-net,tap$vmnumber \
+		-s 2,virtio-net,tap$vmnumber,mac=$macaddress10:0$vmnumber \
 		$cdrom \
 		-s 29,fbuf,tcp=$vnc:$vncport,w=800,h=600 \
 		-s 30,xhci,tablet \
